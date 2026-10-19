@@ -1,20 +1,24 @@
-import { useState } from 'react';
+import {useState, useEffect} from 'react';
 
-// Избранные матчи (по id). Хранятся только в памяти, пока открыто приложение.
+const STORAGE_KEY = 'favorites_matches';
+
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<string[]>([]);
+    const [favorites, setFavorites] = useState<string[]>(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : [];
+    });
 
-  const isFavorite = (id: string) => Boolean(favorites.indexOf(id));
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+    }, [favorites]);
 
-  const toggle = (id: string) => {
-    const index = favorites.indexOf(id);
-    if (index === -1) {
-      favorites.push(id);
-    } else {
-      favorites.splice(index, 1);
-    }
-    setFavorites(favorites);
-  };
+    const isFavorite = (id: string) => favorites.includes(id);
 
-  return { favorites, isFavorite, toggle };
+    const toggle = (id: string) => {
+        setFavorites((prev) =>
+            prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
+        );
+    };
+
+    return {favorites, isFavorite, toggle};
 }
