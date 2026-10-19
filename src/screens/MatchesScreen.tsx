@@ -35,6 +35,11 @@ type MatchesResponse = {
 
 type FilterType = 'all' | 'upcoming' | 'finished';
 
+type MatchesScreenProps = {
+    isDark: boolean;
+    toggleTheme: () => void;
+};
+
 function getStatusText(match: Match): string {
     switch (match.status) {
         case 'finished': return 'Завершен';
@@ -56,7 +61,7 @@ function formatDate(dateString: string | null): string {
     });
 }
 
-export function MatchesScreen() {
+export function MatchesScreen({isDark, toggleTheme}: MatchesScreenProps) {
     const [matches, setMatches] = useState<Match[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -95,12 +100,22 @@ export function MatchesScreen() {
     });
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, isDark && styles.containerDark]}>
             <View style={styles.header}>
-                <Text style={styles.title}>Матчи тура</Text>
-                <Pressable onPress={fetchMatches} style={styles.refreshButton}>
-                    <Text style={styles.refreshText}>Обновить</Text>
-                </Pressable>
+                <Text style={[styles.title, isDark && styles.textDark]}>Матчи тура</Text>
+
+                <View style={styles.headerActions}>
+                    <Pressable
+                        onPress={toggleTheme}
+                        style={[styles.themeButton, isDark && styles.themeButtonDark]}
+                    >
+                        <Text style={{fontSize: 20}}>{isDark ? '☀️' : '🌙'}</Text>
+                    </Pressable>
+
+                    <Pressable onPress={fetchMatches} style={styles.refreshButton}>
+                        <Text style={styles.refreshText}>Обновить</Text>
+                    </Pressable>
+                </View>
             </View>
 
             <UpdatedAgo since={lastUpdated} />
@@ -110,9 +125,13 @@ export function MatchesScreen() {
                     <Pressable
                         key={f}
                         onPress={() => setFilter(f)}
-                        style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
+                        style={[
+                            styles.filterBtn,
+                            isDark && styles.filterBtnDark,
+                            filter === f && styles.filterBtnActive
+                        ]}
                     >
-                        <Text style={filter === f ? styles.filterTextActive : styles.filterText}>
+                        <Text style={filter === f ? styles.filterTextActive : (isDark ? styles.filterTextDark : styles.filterText)}>
                             {f === 'all' ? 'Все' : f === 'upcoming' ? 'Предстоящие' : 'Завершённые'}
                         </Text>
                     </Pressable>
@@ -130,7 +149,7 @@ export function MatchesScreen() {
                 </View>
             ) : filteredMatches.length === 0 ? (
                 <View style={styles.center}>
-                    <Text style={styles.emptyText}>Нет матчей для отображения</Text>
+                    <Text style={isDark ? styles.textSecondaryDark : styles.emptyText}>Нет матчей для отображения</Text>
                 </View>
             ) : (
                 <FlatList
@@ -138,15 +157,15 @@ export function MatchesScreen() {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.list}
                     renderItem={({item}) => (
-                        <View style={styles.card}>
+                        <View style={[styles.card, isDark && styles.cardDark]}>
                             <View style={styles.cardHeader}>
-                                <Text style={styles.dateText}>{formatDate(item.startsAt)}</Text>
+                                <Text style={[styles.dateText, isDark && styles.textSecondaryDark]}>{formatDate(item.startsAt)}</Text>
                                 <FavoriteButton
                                     active={isFavorite(item.id)}
                                     onPress={() => toggle(item.id)}
                                 />
                             </View>
-                            <Text style={styles.teams}>
+                            <Text style={[styles.teams, isDark && styles.textDark]}>
                                 {item.home.name} — {item.away.name}
                             </Text>
                             {item.score ? (
@@ -154,9 +173,9 @@ export function MatchesScreen() {
                                     {item.score.home} : {item.score.away}
                                 </Text>
                             ) : (
-                                <Text style={styles.scorePlaceholder}>Счет не известен</Text>
+                                <Text style={[styles.scorePlaceholder, isDark && styles.textSecondaryDark]}>Счет не известен</Text>
                             )}
-                            <Text style={styles.statusText}>{getStatusText(item)}</Text>
+                            <Text style={[styles.statusText, isDark && styles.textSecondaryDark]}>{getStatusText(item)}</Text>
                         </View>
                     )}
                 />
@@ -171,15 +190,39 @@ const styles = StyleSheet.create({
         padding: 16,
         backgroundColor: '#f9fafb',
     },
+    containerDark: {
+        backgroundColor: '#111827',
+    },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 8,
     },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    themeButton: {
+        padding: 6,
+        borderRadius: 20,
+        backgroundColor: '#e5e7eb',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    themeButtonDark: {
+        backgroundColor: '#374151',
+    },
     title: {
         fontSize: 22,
         fontWeight: 'bold',
+    },
+    textDark: {
+        color: '#f9fafb',
+    },
+    textSecondaryDark: {
+        color: '#9ca3af',
     },
     refreshButton: {
         padding: 8,
@@ -199,11 +242,17 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: '#e5e7eb',
     },
+    filterBtnDark: {
+        backgroundColor: '#374151',
+    },
     filterBtnActive: {
         backgroundColor: '#ef3124',
     },
     filterText: {
         color: '#374151',
+    },
+    filterTextDark: {
+        color: '#d1d5db',
     },
     filterTextActive: {
         color: '#fff',
@@ -243,6 +292,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
+    },
+    cardDark: {
+        backgroundColor: '#1f2937',
     },
     cardHeader: {
         flexDirection: 'row',
